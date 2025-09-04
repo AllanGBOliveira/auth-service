@@ -1,99 +1,249 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Auth Microservice
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Um microserviço de autenticação construído com NestJS e PostgreSQL.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Funcionalidades
 
-## Description
+- **Autenticação JWT**: Sistema completo de login/register com tokens JWT
+- **Hash de Senhas**: Senhas criptografadas com bcrypt
+- **Guards Globais**: Proteção automática de rotas com JWT Guard
+- **CRUD de Usuários**: Criação, leitura, atualização e exclusão de usuários
+- **Banco PostgreSQL**: Integração completa com PostgreSQL usando TypeORM
+- **Migrations**: Sistema de migração de banco de dados
+- **Docker Seguro**: Configuração com variáveis de ambiente (sem credenciais hardcoded)
+- **Validação**: Validação de dados com class-validator
+- **TypeScript**: Totalmente tipado
+- **Arquitetura Modular**: Separação clara entre Auth e Users modules
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📋 Pré-requisitos
 
-## Project setup
+- Node.js (v16 ou superior)
+- Docker e Docker Compose
+- npm ou yarn
 
+## 🛠️ Configuração do Ambiente
+
+1. **Clone o repositório e instale as dependências:**
 ```bash
-$ npm install
+npm install
 ```
 
-## Compile and run the project
-
+2. **Configure as variáveis de ambiente:**
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cp .env.example .env
+# Edite o arquivo .env com suas credenciais
 ```
 
-## Run tests
-
+**📝 Variáveis Obrigatórias:**
 ```bash
-# unit tests
-$ npm run test
+# Database
+DB_USERNAME=auth_user
+DB_PASSWORD=sua_senha_segura
+DB_DATABASE=auth_db
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# JWT
+JWT_SECRET=sua-chave-jwt-super-secreta-minimo-32-caracteres
 ```
 
-## Deployment
+**⚠️ CRÍTICO**: Configure as variáveis obrigatórias no arquivo `.env`:
+- `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` (PostgreSQL)
+- `JWT_SECRET` (chave forte com mínimo 32 caracteres)
+- Aplicação **não iniciará** sem essas configurações
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+3. **Inicie o PostgreSQL com Docker:**
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker compose up -d postgres
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+4. **Execute as migrations:**
+```bash
+npm run migration:run
+```
 
-## Resources
+## 🚀 Executando a Aplicação
 
-Check out a few resources that may come in handy when working with NestJS:
+### Desenvolvimento Local
+```bash
+# Desenvolvimento
+npm run start:dev
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Produção
+npm run start:prod
+```
 
-## Support
+### Com Docker (Recomendado)
+```bash
+# Subir todos os serviços (PostgreSQL + NestJS)
+docker compose up
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Apenas PostgreSQL (para desenvolvimento local)
+docker compose up -d postgres
 
-## Stay in touch
+# Build e subir com logs
+docker compose up --build
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+A aplicação estará disponível em `http://localhost:3000`
 
-## License
+## 📊 Banco de Dados
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-# auth-service
+### Configuração PostgreSQL
+- **Host**: `DB_HOST` (padrão: localhost)
+- **Porta**: `DB_PORT` (padrão: 5432)
+- **Database**: `DB_DATABASE` ⚠️ **Obrigatório**
+- **Usuário**: `DB_USERNAME` ⚠️ **Obrigatório**
+- **Senha**: `DB_PASSWORD` ⚠️ **Obrigatório**
+
+**🔒 Segurança**: 
+- Todas as credenciais são configuradas via variáveis de ambiente
+- Valores em branco no `.env.example` por segurança
+- Configure antes de executar a aplicação
+
+### Sistema de Migrations
+O projeto usa **migrations explícitas** (não synchronize) para controle total do schema:
+- Configuração unificada em `src/config/database.config.ts`
+- Migrations localizadas em `src/migrations/`
+- Controle de versão do banco via migrations
+
+### Entidades
+- **User**: Entidade principal com campos id, name, email, password, isActive, role, createdAt, updatedAt
+
+## 🔗 Endpoints da API
+
+### Autenticação (`/auth`) - Rotas Públicas
+
+- `POST /auth/register` - Registra novo usuário
+- `POST /auth/login` - Faz login e retorna JWT token
+
+### Usuários (`/users`) - Rotas Protegidas (JWT)
+
+- `GET /users` - Lista todos os usuários
+- `GET /users/profile` - Busca perfil do usuário logado
+- `GET /users/:id` - Busca usuário por ID
+- `POST /users` - Cria novo usuário
+- `PATCH /users/:id` - Atualiza usuário
+- `DELETE /users/:id` - Remove usuário
+
+### Exemplos de Payloads:
+
+**Registro:**
+```json
+{
+  "name": "João Silva",
+  "email": "joao@email.com",
+  "password": "senha123",
+  "role": "user"
+}
+```
+
+**Login:**
+```json
+{
+  "email": "joao@email.com",
+  "password": "senha123"
+}
+```
+
+**Resposta de Autenticação:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+### Autenticação
+Para acessar rotas protegidas, inclua o token JWT no header:
+```
+Authorization: Bearer <seu-jwt-token>
+```
+
+## 🧪 Testes
+
+```bash
+# Testes unitários
+npm run test
+
+# Testes e2e
+npm run test:e2e
+
+# Coverage
+npm run test:cov
+```
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── auth/
+│   ├── decorators/
+│   │   └── public.decorator.ts    # Decorator para rotas públicas
+│   ├── auth.controller.ts         # Endpoints de autenticação
+│   ├── auth.service.ts            # Lógica de autenticação
+│   ├── auth.module.ts             # Módulo de autenticação
+│   └── jwt-auth.guard.ts          # Guard JWT global
+├── config/
+│   └── database.config.ts         # Configuração unificada (NestJS + CLI)
+├── entities/
+│   └── user.entity.ts             # Entidade User com TypeORM
+├── migrations/
+│   └── 1704067200000-CreateUserTable.ts  # Migration inicial
+├── users/
+│   ├── users.controller.ts        # Endpoints de usuários (protegidos)
+│   ├── users.service.ts           # Lógica de negócio de usuários
+│   └── users.module.ts            # Módulo de usuários
+├── app.module.ts                  # Módulo principal com JWT Guard global
+└── main.ts                        # Entry point
+```
+
+## 🐳 Docker
+
+O projeto inclui configuração completa do Docker:
+
+- **PostgreSQL**: Banco de dados
+- **NestJS App**: Aplicação principal
+
+```bash
+# Subir todos os serviços
+docker compose up
+
+# Subir apenas o PostgreSQL
+docker compose up -d postgres
+
+# Parar todos os serviços
+docker compose down
+
+# Rebuild e subir
+docker compose up --build
+```
+
+## 🔧 Scripts Disponíveis
+
+### Aplicação
+- `npm run build` - Compila o projeto
+- `npm run start:dev` - Inicia em modo desenvolvimento
+- `npm run start:prod` - Inicia em modo produção
+- `npm run lint` - Executa o linter
+- `npm run format` - Formata o código
+
+### Migrations
+- `npm run migration:generate -- src/migrations/NomeDaMigration` - Gera nova migration
+- `npm run migration:run` - Executa migrations pendentes
+- `npm run migration:revert` - Reverte a última migration
+
+## 🔐 Segurança Implementada
+
+- ✅ **Autenticação JWT** - Sistema completo com tokens seguros
+- ✅ **Hash de Senhas** - bcrypt para criptografia de senhas
+- ✅ **Guards Globais** - Proteção automática de rotas
+- ✅ **Variáveis de Ambiente** - Credenciais seguras (não hardcoded)
+- ✅ **Separação de Responsabilidades** - Auth vs Users modules
+
+## 📝 Próximos Passos
+
+- [ ] Implementar sistema de roles e permissões avançado
+- [ ] Adicionar refresh tokens
+- [ ] Implementar rate limiting
+- [ ] Adicionar testes unitários e e2e
+- [ ] Documentação com Swagger/OpenAPI
+- [ ] Logs estruturados
+- [ ] Monitoramento e métricas
