@@ -1,12 +1,36 @@
 services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - '${DB_PORT}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   nestjs-app:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '3000:3000'
+      - '${PORT}:3000'
     volumes:
       - .:/app
+      - /app/node_modules
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
     command: npm run start:dev
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
