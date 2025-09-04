@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 import type { Game } from '../types/games';
 
@@ -12,12 +12,13 @@ export class AppController {
   }
 
   @Get('games')
-  getGames(): Array<Game> {
-    return this.appService.getGames();
-  }
-
-  @Get('games/:id')
-  getGameById(@Param('id') id: string): Game | string {
-    return this.appService.getGameById(Number(id));
+  getGames(
+    @Query('search') search?: string,
+    @Query('status') status?: 'active' | 'inactive',
+  ): Array<Game> {
+    return this.appService.getGames({
+      search,
+      status,
+    });
   }
 }

@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-
 describe('AppController', () => {
   let appController: AppController;
 
@@ -21,19 +20,30 @@ describe('AppController', () => {
   });
   describe('games', () => {
     it('should return an array of games', () => {
-      expect(appController.getGames()).toEqual([
-        { id: 1, name: 'Game 1' },
-        { id: 2, name: 'Game 2' },
-        { id: 3, name: 'Game 3' },
+      expect(appController.getGames('', undefined)).toEqual([
+        { id: 1, name: 'Game 1', status: 'active' },
+        { id: 2, name: 'Game 2', status: 'inactive' },
+        { id: 3, name: 'Game 3', status: 'active' },
       ]);
     });
-  });
-  describe('game by id', () => {
-    it('should return a game by id', () => {
-      expect(appController.getGameById('1')).toEqual({ id: 1, name: 'Game 1' });
+
+    it('should return an array of games filtered by search', () => {
+      expect(appController.getGames('2', undefined)).toEqual([
+        { id: 2, name: 'Game 2', status: 'inactive' },
+      ]);
     });
-    it('should return "Game not found" if the game does not exist', () => {
-      expect(appController.getGameById('10')).toEqual('Game not found');
+
+    it('should return an array of games filtered by status', () => {
+      expect(appController.getGames('', 'active')).toEqual([
+        { id: 1, name: 'Game 1', status: 'active' },
+        { id: 3, name: 'Game 3', status: 'active' },
+      ]);
+    });
+
+    it('should return an array of games filtered by search and status', () => {
+      expect(appController.getGames(' 2', 'inactive')).toEqual([
+        { id: 2, name: 'Game 2', status: 'inactive' },
+      ]);
     });
   });
 });
