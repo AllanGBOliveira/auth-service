@@ -1,36 +1,47 @@
 services:
-  postgres:
+  auth-db:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${AUTH_DB_DATABASE}
+      POSTGRES_USER: ${AUTH_DB_USERNAME}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
     ports:
-      - '${DB_PORT}:5432'
+      - '${AUTH_DB_PORT}:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - auth_postgres_data:/var/lib/postgresql/data
+    networks:
+      - game-hub
 
-  nestjs-app:
+  auth-service:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '${PORT}:3000'
+      - '${PORT}:${PORT}'
     volumes:
       - .:/app
       - /app/node_modules
     environment:
       NODE_ENV: ${NODE_ENV}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_DATABASE: ${DB_DATABASE}
+      PORT: '${PORT}'
+      AUTH_DB_HOST: postgres
+      AUTH_DB_PORT: '${AUTH_DB_PORT}'
+      AUTH_DB_USERNAME: ${AUTH_DB_USERNAME}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      AUTH_DB_DATABASE: ${AUTH_DB_DATABASE}
+      GATEWAY_SERVICE_HOST: ${GATEWAY_SERVICE_HOST}
+      GATEWAY_SERVICE_PORT: ${GATEWAY_SERVICE_PORT}
       JWT_SECRET: ${JWT_SECRET}
     command: npm run start:dev
     depends_on:
-      - postgres
+      - auth-db
+    networks:
+      - game-hub
+
+networks:
+  game-hub:
+    external: true
 
 volumes:
-  postgres_data:
+  auth_postgres_data:
