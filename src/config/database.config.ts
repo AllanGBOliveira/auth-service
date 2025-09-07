@@ -5,34 +5,33 @@ import { config } from 'dotenv';
 
 config();
 
-// Configuração base compartilhada
 const baseConfig = {
   type: 'postgres' as const,
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'auth_user',
-  password: process.env.DB_PASSWORD || 'auth_password',
-  database: process.env.DB_DATABASE || 'auth_db',
+  host: process.env.AUTH_DB_HOST || 'localhost',
+  port: process.env.AUTH_DB_PORT || 5432,
+  username: process.env.AUTH_DB_USERNAME || 'auth_user',
+  password: process.env.AUTH_DB_PASSWORD || 'auth_password',
+  database: process.env.AUTH_DB_DATABASE || 'auth_db',
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   migrationsTableName: 'migrations',
-  synchronize: true,
+  synchronize: process.env.NODE_ENV !== 'production',
   logging: process.env.NODE_ENV === 'development',
+  retryAttempts: 10,
+  retryDelay: 3000,
+  autoLoadEntities: true,
 };
 
-// Para o NestJS (runtime)
 export default registerAs(
   'database',
   (): TypeOrmModuleOptions => ({
     ...baseConfig,
-    synchronize: true, // sempre false para usar migrations
   }),
 );
 
-// Para CLI do TypeORM (migrations)
 export const AppDataSource = new DataSource({
   ...baseConfig,
-  entities: ['src/**/*.entity.ts'], // CLI precisa dos arquivos .ts
+  entities: ['src/**/*.entity.ts'],
   migrations: ['src/migrations/*.ts'],
   synchronize: true,
 });

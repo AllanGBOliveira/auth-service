@@ -24,17 +24,20 @@ Um microserviço de autenticação construído com NestJS e PostgreSQL.
 ## 🛠️ Configuração do Ambiente
 
 1. **Clone o repositório e instale as dependências:**
+
 ```bash
 npm install
 ```
 
 2. **Configure as variáveis de ambiente:**
+
 ```bash
 cp .env.example .env
 # Edite o arquivo .env com suas credenciais
 ```
 
 **📝 Variáveis Obrigatórias:**
+
 ```bash
 # Database
 DB_USERNAME=auth_user
@@ -46,16 +49,19 @@ JWT_SECRET=sua-chave-jwt-super-secreta-minimo-32-caracteres
 ```
 
 **⚠️ CRÍTICO**: Configure as variáveis obrigatórias no arquivo `.env`:
+
 - `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` (PostgreSQL)
 - `JWT_SECRET` (chave forte com mínimo 32 caracteres)
 - Aplicação **não iniciará** sem essas configurações
 
 3. **Inicie o PostgreSQL com Docker:**
+
 ```bash
 docker compose up -d postgres
 ```
 
 4. **Execute as migrations:**
+
 ```bash
 npm run migration:run
 ```
@@ -63,6 +69,7 @@ npm run migration:run
 ## 🚀 Executando a Aplicação
 
 ### Desenvolvimento Local
+
 ```bash
 # Desenvolvimento
 npm run start:dev
@@ -72,6 +79,7 @@ npm run start:prod
 ```
 
 ### Com Docker (Recomendado)
+
 ```bash
 # Subir todos os serviços (PostgreSQL + NestJS)
 docker compose up
@@ -83,29 +91,34 @@ docker compose up -d postgres
 docker compose up --build
 ```
 
-A aplicação estará disponível em `http://localhost:3000`
+A aplicação estará disponível em `http://localhost:3001`
 
 ## 📊 Banco de Dados
 
 ### Configuração PostgreSQL
+
 - **Host**: `DB_HOST` (padrão: localhost)
 - **Porta**: `DB_PORT` (padrão: 5432)
 - **Database**: `DB_DATABASE` ⚠️ **Obrigatório**
 - **Usuário**: `DB_USERNAME` ⚠️ **Obrigatório**
 - **Senha**: `DB_PASSWORD` ⚠️ **Obrigatório**
 
-**🔒 Segurança**: 
+**🔒 Segurança**:
+
 - Todas as credenciais são configuradas via variáveis de ambiente
 - Valores em branco no `.env.example` por segurança
 - Configure antes de executar a aplicação
 
 ### Sistema de Migrations
+
 O projeto usa **migrations explícitas** (não synchronize) para controle total do schema:
+
 - Configuração unificada em `src/config/database.config.ts`
 - Migrations localizadas em `src/migrations/`
 - Controle de versão do banco via migrations
 
 ### Entidades
+
 - **User**: Entidade principal com campos id, name, email, password, isActive, role, createdAt, updatedAt
 
 ## 🔗 Endpoints da API
@@ -127,6 +140,7 @@ O projeto usa **migrations explícitas** (não synchronize) para controle total 
 ### Exemplos de Payloads:
 
 **Registro:**
+
 ```json
 {
   "name": "João Silva",
@@ -137,6 +151,7 @@ O projeto usa **migrations explícitas** (não synchronize) para controle total 
 ```
 
 **Login:**
+
 ```json
 {
   "email": "joao@email.com",
@@ -145,6 +160,7 @@ O projeto usa **migrations explícitas** (não synchronize) para controle total 
 ```
 
 **Resposta de Autenticação:**
+
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -152,7 +168,9 @@ O projeto usa **migrations explícitas** (não synchronize) para controle total 
 ```
 
 ### Autenticação
+
 Para acessar rotas protegidas, inclua o token JWT no header:
+
 ```
 Authorization: Bearer <seu-jwt-token>
 ```
@@ -219,6 +237,7 @@ docker compose up --build
 ## 🔧 Scripts Disponíveis
 
 ### Aplicação
+
 - `npm run build` - Compila o projeto
 - `npm run start:dev` - Inicia em modo desenvolvimento
 - `npm run start:prod` - Inicia em modo produção
@@ -226,6 +245,7 @@ docker compose up --build
 - `npm run format` - Formata o código
 
 ### Migrations
+
 - `npm run migration:generate -- src/migrations/NomeDaMigration` - Gera nova migration
 - `npm run migration:run` - Executa migrations pendentes
 - `npm run migration:revert` - Reverte a última migration
