@@ -1,6 +1,6 @@
 # Auth Microservice
 
-Um microserviço de autenticação construído com NestJS e PostgreSQL.
+Um microserviço de autenticação construído com NestJS, PostgreSQL e RabbitMQ para comunicação entre microserviços.
 
 ## 🚀 Funcionalidades
 
@@ -10,6 +10,8 @@ Um microserviço de autenticação construído com NestJS e PostgreSQL.
 - **CRUD de Usuários**: Criação, leitura, atualização e exclusão de usuários
 - **Banco PostgreSQL**: Integração completa com PostgreSQL usando TypeORM
 - **Migrations**: Sistema de migração de banco de dados
+- **RabbitMQ**: Comunicação assíncrona entre microserviços
+- **Interceptors RabbitMQ**: Logging e rate limiting para mensagens
 - **Docker Seguro**: Configuração com variáveis de ambiente (sem credenciais hardcoded)
 - **Validação**: Validação de dados com class-validator
 - **TypeScript**: Totalmente tipado
@@ -46,12 +48,17 @@ DB_DATABASE=auth_db
 
 # JWT
 JWT_SECRET=sua-chave-jwt-super-secreta-minimo-32-caracteres
+
+# RabbitMQ (para comunicação entre microserviços)
+RABBITMQ_URL=amqp://meu_usuario:minha_senha@rabbitmq-container:5672
+RABBITMQ_QUEUE=auth_queue
 ```
 
 **⚠️ CRÍTICO**: Configure as variáveis obrigatórias no arquivo `.env`:
 
 - `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` (PostgreSQL)
 - `JWT_SECRET` (chave forte com mínimo 32 caracteres)
+- `RABBITMQ_URL`, `RABBITMQ_QUEUE` (RabbitMQ para microserviços)
 - Aplicação **não iniciará** sem essas configurações
 
 3. **Inicie o PostgreSQL com Docker:**
@@ -91,7 +98,10 @@ docker compose up -d postgres
 docker compose up --build
 ```
 
-A aplicação estará disponível em `http://localhost:3001`
+**⚠️ IMPORTANTE**: Este microserviço funciona via **RabbitMQ**, não HTTP direto.
+- **Porta 3001**: Apenas para desenvolvimento/debug
+- **Comunicação**: Via RabbitMQ queue `auth_queue`
+- **Gateway**: Acesse através do gateway service em `http://localhost:3000`
 
 ## 📊 Banco de Dados
 
@@ -121,26 +131,49 @@ O projeto usa **migrations explícitas** (não synchronize) para controle total 
 
 - **User**: Entidade principal com campos id, name, email, password, isActive, role, createdAt, updatedAt
 
-## 🔗 Endpoints da API
+## 🔗 Comunicação via RabbitMQ
 
-### Autenticação (`/auth`) - Rotas Públicas
+### Arquitetura de Microserviços
 
-- `POST /auth/register` - Registra novo usuário
-- `POST /auth/login` - Faz login e retorna JWT token
+```
+Frontend → Gateway (HTTP) → RabbitMQ → Auth Service
+```
 
-### Usuários (`/users`) - Rotas Protegidas (JWT)
+### Patterns RabbitMQ Suportados
 
-- `GET /users` - Lista todos os usuários
-- `GET /users/profile` - Busca perfil do usuário logado
-- `GET /users/:id` - Busca usuário por ID
-- `POST /users` - Cria novo usuário
-- `PATCH /users/:id` - Atualiza usuário
-- `DELETE /users/:id` - Remove usuário
+**Autenticação:**
+- `registerMicroservice` - Registra novo usuário
+- `loginMicroservice` - Faz login e retorna JWT token
 
-### Exemplos de Payloads:
+**Usuários (protegidos por JWT):**
+- `findAllUsers` - Lista todos os usuários
+- `findUserById` - Busca usuário por ID
+- `createUser` - Cria novo usuário
+- `updateUser` - Atualiza usuário
+- `deleteUser` - Remove usuário
+- `getUserProfile` - Busca perfil do usuário logado
 
-**Registro:**
+### Acesso via Gateway
 
+Este microserviço **NÃO** aceita requisições HTTP diretas. Toda comunicação é feita via **RabbitMQ**.
+
+Para usar este microserviço, faça requisições HTTP para o **Gateway Service** que se comunica com este serviço via RabbitMQ:
+
+**Autenticação (`/auth`) - Rotas Públicas no Gateway:**
+- `POST http://localhost:3000/auth/register` → `registerMicroservice` pattern
+- `POST http://localhost:3000/auth/login` → `loginMicroservice` pattern
+
+**Usuários (`/users`) - Rotas Protegidas no Gateway:**
+- `GET http://localhost:3000/users` → `findAllUsers` pattern
+- `GET http://localhost:3000/users/profile` → `getUserProfile` pattern
+- `GET http://localhost:3000/users/:id` → `findUserById` pattern
+- `POST http://localhost:3000/users` → `createUser` pattern
+- `PATCH http://localhost:3000/users/:id` → `updateUser` pattern
+- `DELETE http://localhost:3000/users/:id` → `deleteUser` pattern
+
+### Exemplos de Mensagens RabbitMQ:
+
+**Pattern: `registerMicroservice`**
 ```json
 {
   "name": "João Silva",
@@ -150,8 +183,7 @@ O projeto usa **migrations explícitas** (não synchronize) para controle total 
 }
 ```
 
-**Login:**
-
+**Pattern: `loginMicroservice`**
 ```json
 {
   "email": "joao@email.com",
@@ -159,21 +191,41 @@ O projeto usa **migrations explícitas** (não synchronize) para controle total 
 }
 ```
 
-**Resposta de Autenticação:**
+**Pattern: `createUser`**
+```json
+{
+  "name": "Maria Santos",
+  "email": "maria@email.com",
+  "password": "senha456",
+  "role": "admin"
+}
+```
 
+**Pattern: `updateUser`**
+```json
+{
+  "id": "uuid-do-usuario",
+  "name": "João Silva Atualizado",
+  "email": "joao.novo@email.com"
+}
+```
+
+**Resposta Padrão de Autenticação:**
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
-### Autenticação
+### Autenticação via Gateway
 
-Para acessar rotas protegidas, inclua o token JWT no header:
+Para acessar patterns protegidos via Gateway, inclua o token JWT no header das requisições HTTP:
 
 ```
 Authorization: Bearer <seu-jwt-token>
 ```
+
+O Gateway extrairá o token e o enviará junto com a mensagem RabbitMQ para este microserviço.
 
 ## 🧪 Testes
 
@@ -195,22 +247,27 @@ src/
 ├── auth/
 │   ├── decorators/
 │   │   └── public.decorator.ts    # Decorator para rotas públicas
-│   ├── auth.controller.ts         # Endpoints de autenticação
+│   ├── auth.controller.ts         # RabbitMQ message handlers
 │   ├── auth.service.ts            # Lógica de autenticação
 │   ├── auth.module.ts             # Módulo de autenticação
 │   └── jwt-auth.guard.ts          # Guard JWT global
 ├── config/
-│   └── database.config.ts         # Configuração unificada (NestJS + CLI)
+│   ├── database.config.ts         # Configuração PostgreSQL
+│   ├── app.config.ts              # Configuração da aplicação
+│   └── jwt.config.ts              # Configuração JWT
 ├── entities/
 │   └── user.entity.ts             # Entidade User com TypeORM
+├── middleware/
+│   ├── rabbitmq-logger.interceptor.ts      # Logging de mensagens RabbitMQ
+│   └── rabbitmq-rate-limit.interceptor.ts  # Rate limiting RabbitMQ
 ├── migrations/
 │   └── 1704067200000-CreateUserTable.ts  # Migration inicial
 ├── users/
-│   ├── users.controller.ts        # Endpoints de usuários (protegidos)
+│   ├── users.controller.ts        # RabbitMQ message handlers (protegidos)
 │   ├── users.service.ts           # Lógica de negócio de usuários
 │   └── users.module.ts            # Módulo de usuários
-├── app.module.ts                  # Módulo principal com JWT Guard global
-└── main.ts                        # Entry point
+├── app.module.ts                  # Módulo principal com interceptors
+└── main.ts                        # Entry point RabbitMQ
 ```
 
 ## 🐳 Docker
@@ -218,7 +275,8 @@ src/
 O projeto inclui configuração completa do Docker:
 
 - **PostgreSQL**: Banco de dados
-- **NestJS App**: Aplicação principal
+- **RabbitMQ**: Message broker para comunicação
+- **NestJS App**: Microserviço de autenticação
 
 ```bash
 # Subir todos os serviços
@@ -250,20 +308,44 @@ docker compose up --build
 - `npm run migration:run` - Executa migrations pendentes
 - `npm run migration:revert` - Reverte a última migration
 
-## 🔐 Segurança Implementada
+## 🔐 Segurança e Monitoramento
 
+### Segurança
 - ✅ **Autenticação JWT** - Sistema completo com tokens seguros
 - ✅ **Hash de Senhas** - bcrypt para criptografia de senhas
 - ✅ **Guards Globais** - Proteção automática de rotas
 - ✅ **Variáveis de Ambiente** - Credenciais seguras (não hardcoded)
 - ✅ **Separação de Responsabilidades** - Auth vs Users modules
+- ✅ **Rate Limiting** - Proteção contra spam (1000 msgs/15min por email)
+
+### Monitoramento e Logs
+- ✅ **RabbitMQ Logger Interceptor** - Log detalhado de mensagens
+- ✅ **Rate Limit Interceptor** - Controle de taxa de mensagens
+- ✅ **Request Tracking** - ID único por mensagem para rastreamento
+- ✅ **Performance Monitoring** - Tempo de processamento de mensagens
+
+### Exemplo de Logs:
+```bash
+[RabbitMQ-RateLimit] Rate limit check - Key: loginMicroservice:user@email.com | Count: 1/1000
+[RabbitMQ] [abc123def] Received message - Pattern: loginMicroservice | Data: {...}
+[RabbitMQ] [abc123def] Message processed successfully | Response: {...} | Time: 134ms
+```
+
+## 🎯 Funcionalidades Implementadas
+
+- ✅ **Sistema de roles e permissões básico**
+- ✅ **Rate limiting** - 1000 mensagens por 15 minutos
+- ✅ **Logs estruturados** - Interceptors RabbitMQ
+- ✅ **Monitoramento básico** - Tempo de processamento
+- ✅ **Arquitetura de microserviços** - RabbitMQ
+- ✅ **ConfigService pattern** - Configuração centralizada
 
 ## 📝 Próximos Passos
 
-- [ ] Implementar sistema de roles e permissões avançado
 - [ ] Adicionar refresh tokens
-- [ ] Implementar rate limiting
+- [ ] Implementar sistema de permissões avançado
 - [ ] Adicionar testes unitários e e2e
 - [ ] Documentação com Swagger/OpenAPI
-- [ ] Logs estruturados
-- [ ] Monitoramento e métricas
+- [ ] Métricas avançadas (Prometheus/Grafana)
+- [ ] Circuit breaker para RabbitMQ
+- [ ] Dead letter queue handling

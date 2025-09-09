@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RabbitMQLoggerInterceptor } from './middleware/rabbitmq-logger.interceptor';
+import { RabbitMQRateLimitInterceptor } from './middleware/rabbitmq-rate-limit.interceptor';
 import databaseConfig from './config/database.config';
 
 @Module({
@@ -40,6 +42,14 @@ import databaseConfig from './config/database.config';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RabbitMQRateLimitInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RabbitMQLoggerInterceptor,
     },
   ],
 })
