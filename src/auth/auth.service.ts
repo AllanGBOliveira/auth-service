@@ -61,4 +61,26 @@ export class AuthService {
       access_token: await this.jwtService.signAsync(payload),
     };
   }
+
+  async validateToken(token: string): Promise<{ valid: boolean; user?: any; error?: string }> {
+    try {
+      const cleanToken = token.replace('Bearer ', '');
+      
+      const payload = await this.jwtService.verifyAsync(cleanToken);
+      
+      return {
+        valid: true,
+        user: {
+          id: payload.sub,
+          email: payload.email,
+          role: payload.role,
+        },
+      };
+    } catch (error) {
+      return {
+        valid: false,
+        error: 'Token inválido ou expirado',
+      };
+    }
+  }
 }

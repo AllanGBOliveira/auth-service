@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const tempApp = await NestFactory.create(AppModule);
   const configService = tempApp.get(ConfigService);
   await tempApp.close();
@@ -25,7 +27,7 @@ async function bootstrap() {
   );
 
   await app.listen().then(() => {
-    console.log(`Auth microservice listening to RabbitMQ queue: auth_queue`);
+    logger.log('Auth microservice listening to RabbitMQ queue: auth_queue');
   });
 }
 bootstrap();

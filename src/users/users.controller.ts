@@ -1,23 +1,9 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Request,
-  HttpStatus,
-  HttpException,
-} from '@nestjs/common';
-
-import type { Request as ExpressRequest } from 'express';
+import { Controller, Logger } from '@nestjs/common';
+import { MessagePattern, RpcException } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import type { CreateUserDto, UpdateUserDto } from './users.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-export interface JwtPayload extends ExpressRequest {
+export interface JwtPayload {
   user: {
     email: string;
     sub: string;
@@ -28,37 +14,50 @@ export interface JwtPayload extends ExpressRequest {
 }
 
 @Controller('users')
-@UseGuards(JwtAuthGuard)
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
+
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
+  @MessagePattern({ cmd: 'create_user' })
+  async create(payload: { name: string; email: string; password: string; token?: string; user?: any }) {
+    this.logger.log(`Create user request - Email: ${payload.email}, Name: ${payload.name}`);
     try {
+      const createUserDto = {
+        name: payload.name,
+        email: payload.email,
+        password: payload.password,
+      };
       const user = await this.usersService.create(createUserDto);
       return {
         message: 'User created successfully',
         data: user,
       };
-    } catch {
-      throw new HttpException('Failed to create user', HttpStatus.BAD_REQUEST);
+    } catch (error) {
+      this.logger.error(`Failed to create user: ${error.message}`);
+      throw new RpcException(`Failed to create user: ${error.message}`);
     }
   }
 
-  @Get()
-  async findAll() {
+  @MessagePattern({ cmd: 'find_all_users' })
+  async findAll(payload: { token?: string; user?: any }) {
+    this.logger.log('Find all users request received');
     const users = await this.usersService.findAll();
+    this.logger.log(`Found ${users.length} users`);
     return {
       message: 'Users retrieved successfully',
       data: users,
     };
   }
 
-  @Get('profile')
-  async getProfile(@Request() req: JwtPayload) {
-    const user = await this.usersService.findOne(req.user.sub);
+  @MessagePattern({ cmd: 'get_user_profile' })
+  async getProfile(payload: { token?: string; user?: any }) {
+    const userId = payload.user?.sub;
+    this.logger.log(`Get user profile request - UserID: ${userId}`);
+    const user = await this.usersService.findOne(userId);
     if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      this.logger.warn(`User not found - UserID: ${userId}`);
+      throw new RpcException('User not found');
     }
     return {
       message: 'Profile retrieved successfully',
@@ -66,11 +65,13 @@ export class UsersController {
     };
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const user = await this.usersService.findOne(id);
+  @MessagePattern({ cmd: 'find_user_by_id' })
+  async findOne(payload: { id: string; token?: string; user?: any }) {
+    this.logger.log(`Find user by ID request - ID: ${payload.id}`);
+    const user = await this.usersService.findOne(payload.id);
     if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      this.logger.warn(`User not found - ID: ${payload.id}`);
+      throw new RpcException('User not found');
     }
     return {
       message: 'User retrieved successfully',
@@ -78,21 +79,26 @@ export class UsersController {
     };
   }
 
-  @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    const user = await this.usersService.update(id, updateUserDto);
+  @MessagePattern({ cmd: 'update_user' })
+  async update(payload: { id: string; updateUserDto: UpdateUserDto; token?: string; user?: any }) {
+    this.logger.log(`Update user request - ID: ${payload.id}`);
+    const user = await this.usersService.update(payload.id, payload.updateUserDto);
     if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      this.logger.warn(`User not found for update - ID: ${payload.id}`);
+      throw new RpcException('User not found');
     }
+    this.logger.log(`User updated successfully - ID: ${payload.id}`);
     return {
       message: 'User updated successfully',
       data: user,
     };
   }
 
-  @Delete(':id')
-  async remove(@Param('id') id: string) {
-    await this.usersService.remove(id);
+  @MessagePattern({ cmd: 'delete_user' })
+  async remove(payload: { id: string; token?: string; user?: any }) {
+    this.logger.log(`Delete user request - ID: ${payload.id}`);
+    await this.usersService.remove(payload.id);
+    this.logger.log(`User deleted successfully - ID: ${payload.id}`);
     return {
       message: 'User deleted successfully',
     };

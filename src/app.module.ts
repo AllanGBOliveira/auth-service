@@ -7,7 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RabbitMQJwtGuard } from './auth/rabbitmq-jwt.guard';
 import { RabbitMQLoggerInterceptor } from './middleware/rabbitmq-logger.interceptor';
 import { RabbitMQRateLimitInterceptor } from './middleware/rabbitmq-rate-limit.interceptor';
 import databaseConfig from './config/database.config';
@@ -41,7 +41,7 @@ import databaseConfig from './config/database.config';
     AppService,
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useClass: RabbitMQJwtGuard,
     },
     {
       provide: APP_INTERCEPTOR,
