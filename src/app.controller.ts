@@ -1,27 +1,18 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
 import { AppService } from './app.service';
-import type { Game } from '../types/games';
 import { Public } from './auth/decorators/public.decorator';
 
 @Controller()
 export class AppController {
+  private readonly logger = new Logger(AppController.name);
+
   constructor(private readonly appService: AppService) {}
 
   @Public()
-  @Get()
+  @MessagePattern({ cmd: 'health_check' })
   getHello(): string {
+    this.logger.log('Health check request received');
     return this.appService.getHello();
-  }
-
-  @Public()
-  @Get('games')
-  getGames(
-    @Query('search') search?: string,
-    @Query('status') status?: 'active' | 'inactive',
-  ): Array<Game> {
-    return this.appService.getGames({
-      search,
-      status,
-    });
   }
 }
