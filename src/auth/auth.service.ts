@@ -62,12 +62,14 @@ export class AuthService {
     };
   }
 
-  async validateToken(token: string): Promise<{ valid: boolean; user?: any; error?: string }> {
+  async validateToken(
+    token: string,
+  ): Promise<{ valid: boolean; user?: any; error?: string }> {
     try {
       const cleanToken = token.replace('Bearer ', '');
-      
+
       const payload = await this.jwtService.verifyAsync(cleanToken);
-      
+
       return {
         valid: true,
         user: {

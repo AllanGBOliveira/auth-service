@@ -1,0 +1,5 @@
+{
+  "SERVICE_HEALTHY": "Serviço de autenticação funcionando corretamente",
+  "INTERNAL_ERROR": "Erro interno do servidor",
+  "VALIDATION_ERROR": "Erro de validação"
+}

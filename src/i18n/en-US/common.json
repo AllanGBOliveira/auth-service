@@ -1,0 +1,5 @@
+{
+  "SERVICE_HEALTHY": "Authentication service is running properly",
+  "INTERNAL_ERROR": "Internal server error",
+  "VALIDATION_ERROR": "Validation error"
+}
