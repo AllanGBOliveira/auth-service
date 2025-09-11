@@ -2,7 +2,8 @@ import { Body, Controller, Logger } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthEventsService } from './auth-events.service';
 import { Public } from './decorators/public.decorator';
-import { MessagePattern, EventPattern } from '@nestjs/microservices';
+import { MessagePattern, EventPattern, RpcException } from '@nestjs/microservices';
+import { I18nService, I18nContext } from 'nestjs-i18n';
 import type { LoginDto, RegisterDto } from 'types/auth';
 
 @Controller('auth')
@@ -12,41 +13,84 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private authEventsService: AuthEventsService,
+    private i18n: I18nService,
   ) {}
   @Public()
   @MessagePattern({ cmd: 'login' })
-  async loginMicroservice(loginDto: LoginDto) {
-    this.logger.log(`Login request received - Email: ${loginDto.email}`);
-    const result = await this.authService.login(loginDto.email, loginDto.password);
+  async loginMicroservice(data: LoginDto & { lang?: string }) {
+    this.logger.log(`Login request received - Email: ${data.email}`);
     
-    // Publica evento de login
-    const payload = await this.authService.validateToken(result.access_token);
-    if (payload.valid) {
-      await this.authEventsService.publishUserLogin(payload.user);
+    try {
+      console.log('🔍 Current I18n Lang:', I18nContext.current()?.lang);
+      
+      const result = await this.authService.login(data.email, data.password);
+      
+      // Publica evento de login
+      const payload = await this.authService.validateToken(result.access_token);
+      if (payload.valid) {
+        await this.authEventsService.publishUserLogin(payload.user);
+      }
+      
+      const translatedMessage = await this.i18n.t('auth.LOGIN_SUCCESS');
+      console.log('🌍 Translated message:', translatedMessage);
+      
+      return {
+        ...result,
+        message: translatedMessage
+      };
+    } catch (error) {
+      const errorMessage = await this.i18n.t('auth.LOGIN_FAILED');
+      console.log('❌ Error message translated:', errorMessage);
+      throw new RpcException(errorMessage);
     }
-    
-    return result;
   }
 
   @Public()
   @MessagePattern({ cmd: 'register' })
-  async registerMicroservice(registerDto: RegisterDto) {
-    this.logger.log(`Register request received - Email: ${registerDto.email}, Name: ${registerDto.name}`);
-    const result = await this.authService.register(registerDto);
+  async registerMicroservice(data: RegisterDto & { lang?: string }) {
+    this.logger.log(`Register request received - Email: ${data.email}, Name: ${data.name}`);
     
-    const payload = await this.authService.validateToken(result.access_token);
-    if (payload.valid) {
-      await this.authEventsService.publishUserLogin(payload.user);
+    try {
+      const result = await this.authService.register(data);
+      
+      const payload = await this.authService.validateToken(result.access_token);
+      if (payload.valid) {
+        await this.authEventsService.publishUserLogin(payload.user);
+      }
+      
+      return {
+        ...result,
+        message: await this.i18n.t('auth.REGISTER_SUCCESS')
+      };
+    } catch (error) {
+      const errorMessage = await this.i18n.t('auth.REGISTER_FAILED');
+      throw new RpcException(errorMessage);
     }
-    
-    return result;
   }
 
   @Public()
   @MessagePattern({ cmd: 'validate_token' })
-  async validateToken(payload: { token: string }) {
+  async validateToken(data: { token: string; lang?: string }) {
     this.logger.log('Token validation request received');
-    return this.authService.validateToken(payload.token);
+    
+    try {
+      const result = await this.authService.validateToken(data.token);
+      
+      if (result.valid) {
+        return {
+          ...result,
+          message: await this.i18n.t('auth.TOKEN_VALIDATED')
+        };
+      } else {
+        return {
+          ...result,
+          message: await this.i18n.t('auth.TOKEN_INVALID')
+        };
+      }
+    } catch (error) {
+      const errorMessage = await this.i18n.t('auth.TOKEN_INVALID');
+      throw new RpcException(errorMessage);
+    }
   }
 
   @Public()
