@@ -1,14 +1,11 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { RpcException } from '@nestjs/microservices';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
+import { CanActivateRequest, ValidatedUser } from 'types/auth';
+import type { Request } from 'express';
 
 @Injectable()
 export class RabbitMQJwtGuard implements CanActivate {
@@ -27,9 +24,9 @@ export class RabbitMQJwtGuard implements CanActivate {
       return true;
     }
 
-    const data = context.switchToRpc().getData();
-    const token = data?.token || data?.authorization?.replace('Bearer ', '');
-    
+    const data = context.switchToRpc().getData<CanActivateRequest>();
+    const token = data?.token ?? this.extractTokenFromHeader(data.headers);
+
     if (!token) {
       throw new RpcException('Token de autenticação não fornecido');
     }
@@ -39,14 +36,26 @@ export class RabbitMQJwtGuard implements CanActivate {
         'JWT_SECRET',
         'your-secret-key',
       );
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtSecret,
-      });
+      const payload = await this.jwtService.verifyAsync<Partial<ValidatedUser>>(
+        token,
+        {
+          secret: jwtSecret,
+        },
+      );
 
       data.user = payload;
       return true;
-    } catch (error) {
-      throw new RpcException('Token de autenticação inválido');
+    } catch (error: unknown) {
+      const e = error as Error;
+      e.message = 'Token de autenticação inválido';
+      throw new RpcException(e.message);
     }
+  }
+
+  private extractTokenFromHeader(
+    headers: Request['headers'],
+  ): string | undefined {
+    const [type, token] = headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 }

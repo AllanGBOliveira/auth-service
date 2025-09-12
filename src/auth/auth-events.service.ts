@@ -1,7 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
+import {
+  ClientProxy,
+  ClientProxyFactory,
+  Transport,
+} from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import type {
+  AuthEventResult,
+  ValidatedUser,
+  UserLoginEvent,
+  UserLogoutEvent,
+  TokenValidatedEvent,
+  TokenInvalidEvent,
+} from '../../types/auth';
 
 @Injectable()
 export class AuthEventsService {
@@ -26,48 +38,65 @@ export class AuthEventsService {
     });
   }
 
-  async validateTokenAndPublish(token: string, requestId: string, targetService: string) {
-    this.logger.log(`Token validation request - RequestID: ${requestId}, Target: ${targetService}`);
-    
+  async validateTokenAndPublish(
+    token: string,
+    requestId: string,
+    targetService: string,
+  ): Promise<AuthEventResult> {
+    this.logger.log(
+      `Token validation request - RequestID: ${requestId}, Target: ${targetService}`,
+    );
+
     try {
       const cleanToken = token.replace('Bearer ', '');
-      
-      const payload = await this.jwtService.verifyAsync(cleanToken);
-      
-      const authResult = {
+
+      const payload =
+        await this.jwtService.verifyAsync<Partial<ValidatedUser>>(cleanToken);
+      if (!payload) {
+        throw new Error('Token inválido ou expirado');
+      }
+
+      const user: ValidatedUser = {
+        id: payload.sub ?? '',
+        email: payload.email ?? '',
+        role: payload.role ?? '',
+      };
+
+      const authResult: AuthEventResult = {
         requestId,
         targetService,
         valid: true,
-        user: {
-          id: payload.sub,
-          email: payload.email,
-          role: payload.role,
-        },
+        user,
         timestamp: new Date().toISOString(),
       };
 
       this.client.emit('auth.token.validated', authResult);
-      this.logger.log(`Token valid - Published success event for RequestID: ${requestId}`);
-      
+      this.logger.log(
+        `Token valid - Published success event for RequestID: ${requestId}`,
+      );
+
       return authResult;
-    } catch (error) {
-      const authResult = {
+    } catch (error: unknown) {
+      const e = error as Error;
+      const authResult: AuthEventResult = {
         requestId,
         targetService,
         valid: false,
-        error: 'Token inválido ou expirado',
+        error: e.message || 'Token inválido ou expirado',
         timestamp: new Date().toISOString(),
       };
 
       this.client.emit('auth.token.invalid', authResult);
-      this.logger.warn(`Token invalid - Published failure event for RequestID: ${requestId}`);
-      
+      this.logger.warn(
+        `Token invalid - Published failure event for RequestID: ${requestId}`,
+      );
+
       return authResult;
     }
   }
 
-  async publishUserLogin(user: any) {
-    const loginEvent = {
+  publishUserLogin(user: ValidatedUser) {
+    const loginEvent: UserLoginEvent = {
       eventType: 'user.login',
       user: {
         id: user.id,
@@ -81,8 +110,8 @@ export class AuthEventsService {
     this.logger.log(`Published login event for user: ${user.email}`);
   }
 
-  async publishUserLogout(userId: string) {
-    const logoutEvent = {
+  publishUserLogout(userId: string) {
+    const logoutEvent: UserLogoutEvent = {
       eventType: 'user.logout',
       userId,
       timestamp: new Date().toISOString(),
@@ -92,8 +121,8 @@ export class AuthEventsService {
     this.logger.log(`Published logout event for user: ${userId}`);
   }
 
-  async publishTokenValidated(user: any, requestId?: string) {
-    const validationEvent = {
+  publishTokenValidated(user: ValidatedUser, requestId?: string) {
+    const validationEvent: TokenValidatedEvent = {
       eventType: 'token.validated',
       user: {
         id: user.id,
@@ -108,8 +137,8 @@ export class AuthEventsService {
     this.logger.log(`Published token validation event for user: ${user.email}`);
   }
 
-  async publishTokenInvalid(requestId?: string, error?: string) {
-    const invalidEvent = {
+  publishTokenInvalid(requestId?: string, error?: string) {
+    const invalidEvent: TokenInvalidEvent = {
       eventType: 'token.invalid',
       requestId,
       error: error || 'Token inválido ou expirado',

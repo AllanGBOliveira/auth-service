@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { RmqContext } from '@nestjs/microservices';
+// import { RmqContext } from '@nestjs/microservices';
 
 @Injectable()
 export class RabbitMQLoggerInterceptor implements NestInterceptor {
@@ -15,16 +15,16 @@ export class RabbitMQLoggerInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const contextType = context.getType();
-    
+
     if (contextType === 'rpc') {
-      const rmqContext = context.switchToRpc().getContext<RmqContext>();
+      // const rmqContext = context.switchToRpc().getContext<RmqContext>();
       const pattern = context.getHandler().name;
-      const data = context.switchToRpc().getData();
-      
+      const data: Record<string, any> = context.switchToRpc().getData();
+
       const messageId = this.generateMessageId();
-    
+
       this.logger.log(
-        `[${messageId}] Received message - Pattern: ${pattern} | Data: ${JSON.stringify(data)}`
+        `[${messageId}] Received message - Pattern: ${pattern} | Data: ${JSON.stringify(data)}`,
       );
 
       const startTime = Date.now();
@@ -34,13 +34,15 @@ export class RabbitMQLoggerInterceptor implements NestInterceptor {
           next: (response) => {
             const processingTime = Date.now() - startTime;
             this.logger.log(
-              `[${messageId}] Message processed successfully - Pattern: ${pattern} | Response: ${JSON.stringify(response)} | Time: ${processingTime}ms`
+              `[${messageId}] Message processed successfully - Pattern: ${pattern} | Response: ${JSON.stringify(response)} | Time: ${processingTime}ms`,
             );
           },
-          error: (error) => {
+          error: (error: unknown) => {
+            const e = error as Error;
+
             const processingTime = Date.now() - startTime;
             this.logger.error(
-              `[${messageId}] Message processing failed - Pattern: ${pattern} | Error: ${error.message} | Time: ${processingTime}ms`
+              `[${messageId}] Message processing failed - Pattern: ${pattern} | Error: ${e.message} | Time: ${processingTime}ms`,
             );
           },
         }),

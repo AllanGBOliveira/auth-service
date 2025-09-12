@@ -5,7 +5,7 @@ import {
   CallHandler,
   Logger,
 } from '@nestjs/common';
-import { Observable, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
 
 interface RateLimitStore {
@@ -24,16 +24,16 @@ export class RabbitMQRateLimitInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const contextType = context.getType();
-    
+
     if (contextType === 'rpc') {
-      const data = context.switchToRpc().getData();
+      const data: Record<string, any> = context.switchToRpc().getData();
       const pattern = context.getHandler().name;
-      
+
       const key = this.getKey(data, pattern);
       const now = Date.now();
-      
+
       this.cleanExpiredEntries(now);
-      
+
       if (!this.store[key]) {
         this.store[key] = {
           count: 1,
@@ -51,12 +51,12 @@ export class RabbitMQRateLimitInterceptor implements NestInterceptor {
       }
 
       const { count } = this.store[key];
-      
+
       if (count > this.maxMessages) {
         this.logger.warn(
-          `Rate limit exceeded for key: ${key} | Pattern: ${pattern} | Count: ${count}`
+          `Rate limit exceeded for key: ${key} | Pattern: ${pattern} | Count: ${count}`,
         );
-        
+
         throw new RpcException({
           statusCode: 429,
           message: 'Too many requests, please try again later.',
@@ -65,24 +65,24 @@ export class RabbitMQRateLimitInterceptor implements NestInterceptor {
       }
 
       this.logger.debug(
-        `Rate limit check - Key: ${key} | Pattern: ${pattern} | Count: ${count}/${this.maxMessages}`
+        `Rate limit check - Key: ${key} | Pattern: ${pattern} | Count: ${count}/${this.maxMessages}`,
       );
     }
 
     return next.handle();
   }
 
-  private getKey(data: any, pattern: string): string {
+  private getKey(data: Record<string, any>, pattern: string): string {
     if (data?.email) {
       return `${pattern}:${data.email}`;
     }
-    
+
     const timeWindow = Math.floor(Date.now() / (5 * 60 * 1000));
     return `${pattern}:${timeWindow}`;
   }
 
   private cleanExpiredEntries(now: number): void {
-    Object.keys(this.store).forEach(key => {
+    Object.keys(this.store).forEach((key) => {
       if (now > this.store[key].resetTime) {
         delete this.store[key];
       }

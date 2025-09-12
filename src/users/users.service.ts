@@ -2,20 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
-
-export interface CreateUserDto {
-  name: string;
-  email: string;
-  password: string;
-  role?: string;
-}
-
-export interface UpdateUserDto {
-  name?: string;
-  email?: string;
-  isActive?: boolean;
-  role?: string;
-}
+import type { CreateUserDto, UpdateUserDto } from '../../types/users';
 
 @Injectable()
 export class UsersService {

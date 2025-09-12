@@ -29,9 +29,7 @@ import { RabbitMQI18nResolver } from './config/rabbitmq-i18n.resolver';
         path: path.join(__dirname, '/i18n/'),
         watch: process.env.NODE_ENV !== 'production',
       },
-      resolvers: [
-        RabbitMQI18nResolver,
-      ],
+      resolvers: [RabbitMQI18nResolver],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -43,7 +41,9 @@ import { RabbitMQI18nResolver } from './config/rabbitmq-i18n.resolver';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET', 'your-secret-key'),
-        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h') },
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
+        },
       }),
       inject: [ConfigService],
       global: true,

@@ -1,8 +1,14 @@
+import type { CreateUserDto } from './../../types/users.d';
+import type {
+  AuthTokenResponse,
+  JwtPayload,
+  TokenValidationResult,
+  ValidatedUser,
+} from './../../types/auth.d';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import type { CreateUserDto } from '../users/users.service';
 import { User } from 'src/entities/user.entity';
 
 @Injectable()
@@ -32,56 +38,65 @@ export class AuthService {
     return null;
   }
 
-  async login(
-    email: string,
-    password: string,
-  ): Promise<{ access_token: string }> {
+  async login(email: string, password: string): Promise<AuthTokenResponse> {
     const user = await this.validateUser(email, password);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    const payload: JwtPayload = {
+      email: user.email ?? '',
+      sub: user.id ?? '',
+      role: user.role ?? '',
+    };
     return {
       access_token: await this.jwtService.signAsync(payload),
     };
   }
 
-  async register(
-    createUserDto: CreateUserDto,
-  ): Promise<{ access_token: string }> {
+  async register(createUserDto: CreateUserDto): Promise<AuthTokenResponse> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const user = await this.usersService.create({
       ...createUserDto,
       password: hashedPassword,
     });
 
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    const payload: JwtPayload = {
+      email: user.email,
+      sub: user.id,
+      role: user.role,
+    };
     return {
       access_token: await this.jwtService.signAsync(payload),
     };
   }
 
-  async validateToken(
-    token: string,
-  ): Promise<{ valid: boolean; user?: any; error?: string }> {
+  async validateToken(token: string): Promise<TokenValidationResult> {
     try {
       const cleanToken = token.replace('Bearer ', '');
 
-      const payload = await this.jwtService.verifyAsync(cleanToken);
+      const payload =
+        await this.jwtService.verifyAsync<Partial<ValidatedUser>>(cleanToken);
+      if (!payload) {
+        throw new Error('Token inválido ou expirado');
+      }
+
+      const user: ValidatedUser = {
+        id: payload.sub ?? '',
+        email: payload.email ?? '',
+        role: payload.role ?? '',
+      };
 
       return {
         valid: true,
-        user: {
-          id: payload.sub,
-          email: payload.email,
-          role: payload.role,
-        },
+        user,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      const e = error as Error;
+      e.message = 'Token inválido ou expirado';
       return {
         valid: false,
-        error: 'Token inválido ou expirado',
+        error: e.message,
       };
     }
   }
