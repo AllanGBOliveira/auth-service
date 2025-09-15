@@ -1,0 +1,11 @@
+{
+  "NOT_EMPTY": "{property} não pode estar vazio",
+  "INVALID_EMAIL": "Formato de email inválido",
+  "INVALID_BOOLEAN": "{property} deve ser um valor booleano",
+  "MIN_LENGTH": "{property} deve ter pelo menos {constraints.0} caracteres",
+  "MAX_LENGTH": "{property} não pode exceder {constraints.0} caracteres",
+  "IS_STRING": "{property} deve ser uma string",
+  "IS_STRONG_PASSWORD": "{property} deve conter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais",
+  "INVALID_ROLE": "{property} deve ser um papel válido",
+  "INVALID_UUID": "{property} deve ser um UUID válido"
+}

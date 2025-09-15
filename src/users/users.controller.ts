@@ -44,7 +44,7 @@ export class UsersController {
       const e = error as Error;
       this.logger.error(`Failed to create user: ${e.message}`);
 
-      throw new RpcException(e.message);
+      throw new RpcException(this.i18n.t('auth.CREATE_USER_FAILED'));
     }
   }
 

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
+import { I18nService } from 'nestjs-i18n';
 
 interface RateLimitStore {
   [key: string]: {
@@ -21,6 +22,8 @@ export class RabbitMQRateLimitInterceptor implements NestInterceptor {
   private store: RateLimitStore = {};
   private readonly windowMs = 15 * 60 * 1000;
   private readonly maxMessages = 1000;
+
+  constructor(private i18n: I18nService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const contextType = context.getType();
@@ -58,7 +61,7 @@ export class RabbitMQRateLimitInterceptor implements NestInterceptor {
         );
 
         throw new RpcException({
-          message: 'Too many requests, please try again later.',
+          message: this.i18n.t('auth.RATE_LIMIT_EXCEEDED'),
           status: 429,
         });
       }

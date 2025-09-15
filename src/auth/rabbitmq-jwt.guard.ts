@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { RpcException } from '@nestjs/microservices';
+import { I18nService } from 'nestjs-i18n';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
 import { CanActivateRequest, ValidatedUser } from 'types/auth';
 import type { Request } from 'express';
@@ -13,6 +14,7 @@ export class RabbitMQJwtGuard implements CanActivate {
     private jwtService: JwtService,
     private reflector: Reflector,
     private configService: ConfigService,
+    private i18n: I18nService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -28,7 +30,7 @@ export class RabbitMQJwtGuard implements CanActivate {
     const token = data?.token ?? this.extractTokenFromHeader(data.headers);
 
     if (!token) {
-      throw new RpcException('Token de autenticação não fornecido');
+      throw new RpcException(this.i18n.t('auth.TOKEN_NOT_PROVIDED'));
     }
 
     try {
@@ -45,10 +47,8 @@ export class RabbitMQJwtGuard implements CanActivate {
 
       data.user = payload;
       return true;
-    } catch (error: unknown) {
-      const e = error as Error;
-
-      throw new RpcException(e.message);
+    } catch {
+      throw new RpcException(this.i18n.t('auth.TOKEN_INVALID'));
     }
   }
 

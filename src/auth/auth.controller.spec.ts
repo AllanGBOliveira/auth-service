@@ -108,7 +108,6 @@ describe('AuthController', () => {
       const error = new Error('Invalid credentials');
 
       mockAuthService.login.mockRejectedValue(error);
-      mockI18nService.t.mockReturnValue('Login failed');
 
       await expect(controller.loginMicroservice(loginData)).rejects.toThrow();
 
@@ -118,6 +117,7 @@ describe('AuthController', () => {
       );
       expect(mockAuthService.validateToken).not.toHaveBeenCalled();
       expect(mockAuthEventsService.publishUserLogin).not.toHaveBeenCalled();
+      // O controller agora chama i18n.t no catch para traduzir a mensagem de erro
       expect(mockI18nService.t).toHaveBeenCalledWith('auth.LOGIN_FAILED');
     });
   });
@@ -164,7 +164,6 @@ describe('AuthController', () => {
       const error = new Error('Email already exists');
 
       mockAuthService.register.mockRejectedValue(error);
-      mockI18nService.t.mockReturnValue('Registration failed');
 
       await expect(
         controller.registerMicroservice(registerData),
@@ -173,6 +172,7 @@ describe('AuthController', () => {
       expect(mockAuthService.register).toHaveBeenCalledWith(registerData);
       expect(mockAuthService.validateToken).not.toHaveBeenCalled();
       expect(mockAuthEventsService.publishUserLogin).not.toHaveBeenCalled();
+
       expect(mockI18nService.t).toHaveBeenCalledWith('auth.REGISTER_FAILED');
     });
   });
@@ -233,13 +233,13 @@ describe('AuthController', () => {
       const error = new Error('Token malformed');
 
       mockAuthService.validateToken.mockRejectedValue(error);
-      mockI18nService.t.mockReturnValue('Token invalid');
 
       await expect(controller.validateToken(tokenData)).rejects.toThrow();
 
       expect(mockAuthService.validateToken).toHaveBeenCalledWith(
         tokenData.token,
       );
+      // O controller agora chama i18n.t no catch para traduzir a mensagem de erro
       expect(mockI18nService.t).toHaveBeenCalledWith('auth.TOKEN_INVALID');
     });
   });
