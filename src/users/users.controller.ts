@@ -43,8 +43,8 @@ export class UsersController {
     } catch (error: unknown) {
       const e = error as Error;
       this.logger.error(`Failed to create user: ${e.message}`);
-      const errorMessage = this.i18n.t('auth.USER_ALREADY_EXISTS');
-      throw new RpcException(errorMessage);
+
+      throw new RpcException(e.message);
     }
   }
 
@@ -69,7 +69,10 @@ export class UsersController {
     if (!user) {
       this.logger.warn(`User not found - UserID: ${userId}`);
       const errorMessage = this.i18n.t('auth.USER_NOT_FOUND');
-      throw new RpcException(errorMessage);
+      throw new RpcException({
+        message: errorMessage,
+        status: 404,
+      });
     }
     return {
       message: this.i18n.t('auth.PROFILE_RETRIEVED'),
@@ -84,7 +87,10 @@ export class UsersController {
     if (!user) {
       this.logger.warn(`User not found - ID: ${payload.id}`);
       const errorMessage = this.i18n.t('auth.USER_NOT_FOUND');
-      throw new RpcException(errorMessage);
+      throw new RpcException({
+        message: errorMessage,
+        status: 404,
+      });
     }
     return {
       message: this.i18n.t('auth.PROFILE_RETRIEVED'),
@@ -102,7 +108,10 @@ export class UsersController {
     if (!user) {
       this.logger.warn(`User not found for update - ID: ${payload.id}`);
       const errorMessage = this.i18n.t('auth.USER_NOT_FOUND');
-      throw new RpcException(errorMessage);
+      throw new RpcException({
+        message: errorMessage,
+        status: 404,
+      });
     }
     this.logger.log(`User updated successfully - ID: ${payload.id}`);
     return {

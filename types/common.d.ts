@@ -28,3 +28,9 @@ export interface BaseServiceError {
   status: 'error';
   message: string;
 }
+
+export interface RpcExceptionError {
+  message: string;
+  status: number;
+  type: 'rpc';
+}

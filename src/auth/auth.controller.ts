@@ -49,11 +49,14 @@ export class AuthController {
       };
     } catch (error: unknown) {
       const e = error as Error;
-      const errorMessage = this.i18n.t('auth.LOGIN_FAILED') || e.message;
+
       this.logger.error(
-        `Login failed - Error message translated: ${errorMessage}`,
+        `Login failed - Error message translated: ${e.message}`,
       );
-      throw new RpcException(errorMessage);
+      throw new RpcException({
+        message: e.message,
+        status: 401,
+      });
     }
   }
 
@@ -78,9 +81,12 @@ export class AuthController {
       };
     } catch (error: unknown) {
       const e = error as Error;
-      const errorMessage = this.i18n.t('auth.REGISTER_FAILED') || e.message;
-      this.logger.error(`Register failed - Error message: ${errorMessage}`);
-      throw new RpcException(errorMessage);
+
+      this.logger.error(`Register failed - Error message: ${e.message}`);
+      throw new RpcException({
+        message: e.message,
+        status: 409,
+      });
     }
   }
 
@@ -105,11 +111,14 @@ export class AuthController {
       }
     } catch (error: unknown) {
       const e = error as Error;
-      const errorMessage = this.i18n.t('auth.TOKEN_INVALID') || e.message;
+
       this.logger.error(
-        `Token validation failed - Error message: ${errorMessage}`,
+        `Token validation failed - Error message: ${e.message}`,
       );
-      throw new RpcException(errorMessage);
+      throw new RpcException({
+        message: e.message,
+        status: 401,
+      });
     }
   }
 

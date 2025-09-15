@@ -3,6 +3,7 @@ import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { GlobalRpcExceptionFilter } from './filters/global-rpc-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -25,6 +26,8 @@ async function bootstrap() {
       },
     },
   );
+
+  app.useGlobalFilters(new GlobalRpcExceptionFilter());
 
   await app.listen().then(() => {
     logger.log('Auth microservice listening to RabbitMQ queue: auth_queue');

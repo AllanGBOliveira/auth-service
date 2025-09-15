@@ -47,7 +47,7 @@ export class RabbitMQJwtGuard implements CanActivate {
       return true;
     } catch (error: unknown) {
       const e = error as Error;
-      e.message = 'Token de autenticação inválido';
+
       throw new RpcException(e.message);
     }
   }

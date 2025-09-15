@@ -58,9 +58,8 @@ export class RabbitMQRateLimitInterceptor implements NestInterceptor {
         );
 
         throw new RpcException({
-          statusCode: 429,
           message: 'Too many requests, please try again later.',
-          error: 'Too Many Requests',
+          status: 429,
         });
       }
 
