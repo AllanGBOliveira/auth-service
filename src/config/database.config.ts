@@ -8,7 +8,7 @@ config();
 const baseConfig = {
   type: 'postgres' as const,
   host: process.env.AUTH_DB_HOST || 'localhost',
-  port: process.env.AUTH_DB_PORT || 5432,
+  port: Number(process.env.AUTH_DB_PORT) || 5432,
   username: process.env.AUTH_DB_USERNAME || 'auth_user',
   password: process.env.AUTH_DB_PASSWORD || 'auth_password',
   database: process.env.AUTH_DB_DATABASE || 'auth_db',
